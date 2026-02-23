@@ -9,31 +9,46 @@ const env = process.env.NODE_ENV || "development";
 
 const configPath = path.join(__dirname, "..", "..", "config", "config.js");
 const configData = require(configPath);
-
-const config = configData[env];
+const config = configData[env] || {};
 
 const db = {};
 
+const sequelizeOptions = {
+  host: config.host || process.env.DB_HOST,
+  port: config.port || process.env.DB_PORT || 5432,
+  dialect: config.dialect || process.env.DB_DIALECT || "postgres",
+  logging: config.logging || false,
+  define: {
+    underscored: true,
+    paranoid: true, // soft delete
+  },
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
+};
+
 let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+
+// postgres supabase priority
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, sequelizeOptions);
+} else if (config.use_env_variable && process.env[config.use_env_variable]) {
+  // env path config
+  sequelize = new Sequelize(
+    process.env[config.use_env_variable],
+    sequelizeOptions,
+  );
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, {
-    host: config.host || process.env.DB_HOST,
-    port: config.port || process.env.DB_PORT || 5432,
-    dialect: config.dialect || process.env.DB_DIALECT || "postgres",
-    logging: config.logging || console.log,
-    define: {
-      underscored: true,
-      paranoid: true, // soft delete
-    },
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false, // Penting agar tidak error sertifikat di Vercel/Railway
-      },
-    },
-  });
+  // (localhost)
+  sequelize = new Sequelize(
+    config.database || process.env.DB_NAME,
+    config.username || process.env.DB_USERNAME,
+    config.password || process.env.DB_PASSWORD,
+    sequelizeOptions,
+  );
 }
 
 fs.readdirSync(__dirname)
