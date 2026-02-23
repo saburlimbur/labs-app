@@ -22,11 +22,11 @@ app.use(
 );
 
 app.get("/", (req, res) => {
-  logger.info("Health api root");
+  logger.info("Health check endpoint accessed");
 
-  res.json({
-    status: "ok",
-    message: "hello jokowi",
+  res.status(200).json({
+    status: "success",
+    message: "API is running successfully.",
   });
 });
 
@@ -35,6 +35,18 @@ setupSwagger(app);
 
 // api route
 app.use("/api", router);
+
+// 404 handler
+app.use((req, res) => {
+  logger.warn(`404 Not Found: ${req.originalUrl}`);
+
+  res.status(404).json({
+    status: "error",
+    message: "The requested resource was not found.",
+    path: req.originalUrl,
+    suggestion: "Please verify the URL or refer to the API documentation.",
+  });
+});
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
