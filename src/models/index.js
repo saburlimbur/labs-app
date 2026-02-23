@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const Sequelize = require("sequelize");
 const process = require("process");
+const pg = require("pg");
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || "development";
 
@@ -17,6 +18,7 @@ const sequelizeOptions = {
   host: config.host || process.env.DB_HOST,
   port: config.port || process.env.DB_PORT || 5432,
   dialect: config.dialect || process.env.DB_DIALECT || "postgres",
+  dialectModule: pg,
   logging: config.logging || false,
   define: {
     underscored: true,
