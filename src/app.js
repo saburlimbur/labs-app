@@ -1,13 +1,38 @@
 const express = require("express");
-const morganMiddleware = require("./middleware/morganMiddleware");
-const logger = require("./utils/logger");
+const cors = require("cors")
+const helmet = require("helmet")
+const rateLimit = require("express-rate-limit")
 
+const logger = require("./utils/logger");
+const morganMiddleware = require("./middleware/morganMiddleware");
 const router = require("../src/routes/routes");
 const setupSwagger = require("./swagger/swagger");
 
 const app = express();
 
 app.use(morganMiddleware);
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 100, // max 100 request per window per IP
+  standardHeaders: true, // return rate limit info di header `RateLimit-*`
+  legacyHeaders: false,   // disable `X-RateLimit-*` header
+  message: {
+    status: "error",
+    message: "Too many requests, please try again later.",
+  },
+});
+
+app.use(cors({
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true, 
+}));
+
+app.use(helmet({
+  crossOriginResourcePolicy: false, // biar bisa diakses dari browser lain
+}));
 
 app.use(express.json());
 app.use(
